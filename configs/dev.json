@@ -1,0 +1,13 @@
+{
+  "apicache": {
+    "addr": "127.0.0.1:8080"
+  },
+  "filesystem": {
+    "maxConn": 10,
+    "timeout": 10
+  },
+  "driver": {
+    "name": "redis",
+    "addr": "127.0.0.1:6379"
+  }
+}
