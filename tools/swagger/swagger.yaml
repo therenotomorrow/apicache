@@ -1,0 +1,174 @@
+definitions:
+  api.BadRequest:
+    properties:
+      message:
+        enum:
+        - key is expired
+        type: string
+    type: object
+  api.InternalServer:
+    properties:
+      message:
+        type: string
+    type: object
+  api.NotFound:
+    properties:
+      message:
+        enum:
+        - key not exist
+        type: string
+    type: object
+  api.TooManyRequests:
+    properties:
+      message:
+        enum:
+        - connection timeout
+        - context timeout
+        type: string
+    type: object
+  api.UnprocessableEntity:
+    properties:
+      message:
+        type: string
+    type: object
+  apiv1get.Response:
+    properties:
+      key:
+        type: string
+      val:
+        $ref: '#/definitions/cache.ValType'
+    type: object
+  apiv1post.Payload:
+    properties:
+      ttl:
+        minimum: 0
+        type: integer
+      val:
+        $ref: '#/definitions/cache.ValType'
+    required:
+    - val
+    type: object
+  apiv1post.Response:
+    properties:
+      key:
+        type: string
+      val:
+        $ref: '#/definitions/cache.ValType'
+    type: object
+  cache.ValType:
+    additionalProperties: {}
+    type: object
+info:
+  contact:
+    email: kkxnes@gmail.com
+    name: Mute Team
+    url: https://github.com/therenotomorrow/apicache
+  license:
+    name: MIT
+    url: https://github.com/therenotomorrow/apicache/blob/master/LICENSE
+  title: apicache
+  version: 0.0.1
+paths:
+  /api/v1/{key}/:
+    delete:
+      parameters:
+      - description: Key
+        in: path
+        name: key
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/api.UnprocessableEntity'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/api.TooManyRequests'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.InternalServer'
+      summary: '"Delete key/value pair"'
+      tags:
+      - cache
+    get:
+      parameters:
+      - description: Key
+        in: path
+        name: key
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/apiv1get.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.BadRequest'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/api.NotFound'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/api.UnprocessableEntity'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/api.TooManyRequests'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.InternalServer'
+      summary: '"Retrieve key/value pair"'
+      tags:
+      - cache
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Key
+        in: path
+        name: key
+        required: true
+        type: string
+      - description: Payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/apiv1post.Payload'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/apiv1post.Response'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/api.UnprocessableEntity'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/api.TooManyRequests'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.InternalServer'
+      summary: '"Insert key/value pair"'
+      tags:
+      - cache
+swagger: "2.0"
+tags:
+- name: cache

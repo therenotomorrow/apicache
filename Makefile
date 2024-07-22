@@ -1,23 +1,25 @@
-.PHONY: test
+.PHONY: code docs driver/redis driver/memcached test/smoke test/unit test/integration test/coverage
 
-all: lint test
+code:
+	@"$(CURDIR)/scripts/code.sh"
 
-clean:
-	-docker stop apicache-dev-redis
-	-docker stop apicache-test-redis
-	-docker stop apicache-test-memcache
+docs:
+	@"$(CURDIR)/scripts/docs.sh"
 
-lint:
-	gofmt -s -w .
-	golangci-lint run --enable-all ./...
-	golint ./...
+driver/redis:
+	@"$(CURDIR)/scripts/driver.sh" redis
 
-dev: clean
-	docker run --rm --name apicache-dev-redis -p 6379:6379 -d redis
-	go run cmd/apicache/apicache.go
+driver/memcached:
+	@"$(CURDIR)/scripts/driver.sh" memcached
 
-test: clean
-	docker run --rm --name apicache-test-redis -p 6379:6379 -d redis
-	docker run --rm --name apicache-test-memcache -p 11211:11211 -d memcached
+test/smoke:
+	@"$(CURDIR)/scripts/test.sh" smoke
 
-	go test -race -cover ./...
+test/unit:
+	@"$(CURDIR)/scripts/test.sh" unit
+
+test/integration:
+	@"$(CURDIR)/scripts/test.sh" integration
+
+test/coverage:
+	@"$(CURDIR)/scripts/test.sh" coverage

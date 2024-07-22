@@ -1,0 +1,34 @@
+linters:
+  fast: false
+  enable-all: true
+  disable:
+    # deprecated: by golangci-lint
+    - gomnd
+    - execinquery
+    # useless: we rule dependencies by ourselves
+    - depguard
+
+run:
+  go: "1.22"
+  allow-parallel-runners: true
+  timeout: 5m
+
+output:
+  formats:
+    - path: stdout
+      format: colored-line-number
+  print-issued-lines: true
+  print-linter-name: true
+  show-stats: true
+  sort-results: true
+
+issues:
+  fix: true
+  max-same-issues: 0
+  max-issues-per-linter: 0
+
+linters-settings:
+  wrapcheck:
+    ignorePackageGlobs:
+      - github.com/labstack/echo/*
+      - github.com/kxnes/go-interviews/apicache/pkg/cache*

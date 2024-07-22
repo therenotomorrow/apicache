@@ -1,10 +1,10 @@
 API Cache
 =========
 
-> Taken from: SEDMAX
+> Test task taken somewhere from the internet.
 
-Description
------------
+Goal
+----
 
 Write server application that has an HTTP API for working with string key-value storage in RAM.
 
@@ -16,81 +16,108 @@ Need implement the WEB API that allows to work with the key-value storage:
 
  - set the value for the given key (if the key already exists, then it is updated, if not, it is added)
  - return the value for the given key (if there is no value, an error is returned)
- - the delete function, if there is no value for the given key, should return an error
+ - delete the value for the given key (if there is no value, do nothing)
 
-Constraints
+**Constraints**: there can be any number of network connections, but a limited number 
+of goroutines accessing the storage inside the application. That's why was selected another approach than 
+simple rate limiter because rate limiter must limit network connections, not internal.
+
+System Requirements
+-------------------
+
+```shell
+go version
+# go version go1.22.4 ...
+
+redis-server --version
+# Redis server v=7.2.5 ...
+
+memcached --version
+# memcached 1.6.29 ...
+```
+
+Environment
 -----------
 
-There can be any number of network connections, but a limited number 
-of goroutines accessing the storage inside the application.
+**Note**: use prefix `APICACHE_` for enable variable to be caught in runtime.
 
-Solution
---------
+| Variable              | Type                                | Description                                           |
+|:----------------------|:------------------------------------|:------------------------------------------------------|
+| `DEBUG`               | `bool`                              | Enable debug mode or not                              |
+| `DRIVER_NAME`         | `["machine", "memcached", "redis"]` | Driver type (supported)                               |
+| `DRIVER_ADDRESS`      | `string`                            | Driver DSN address                                    |
+| `DRIVER_MAX_CONN`     | `int`                               | Maximum number of simultaneous connections to the API |
+| `DRIVER_CONN_TIMEOUT` | `time.Duration`                     | Connection timeout for application                    |
 
-Taste it!
+Development
+-----------
 
-#### Dependencies
+Download sources
 
-1. `redis (any)`
-2. `memcached (any)`
-
-#### Testing
-
-```bash
-# Note: memcached and redis servers will up with `$ docker run` command
-$ make
+```shell
+export PROJECT_ROOT=apicache
+git clone https://github.com/therenotomorrow/apicache.git ${PROJECT_ROOT}
+cd ${PROJECT_ROOT}
 ```
 
-#### Running
+Setup project requirements
 
-```bash
-# Note: redis server will up with `$ docker run` command
-$ make dev
+```shell
+# setup requirements
+go mod download
+go mod verify
+
+# lint GO code
+curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.59.1
+
+# create documentation on API
+go install github.com/swaggo/swag/cmd/swag@v1.16.3
 ```
 
-#### Example
+Setup project environment
 
-```bash
-curl -X GET http://127.0.0.1:8080/1
-# {"error":"key (1) not exist"}
-
-curl -X POST -d '{"key":"1","val":"2","ttl":2}' http://127.0.0.1:8080
-# no body
-curl -X POST -d '{"key":"2","val":"1","ttl":10}' http://127.0.0.1:8080
-# no body
-
-curl -X GET http://127.0.0.1:8080/1
-# {"value":"2"}
-
-curl -X GET http://127.0.0.1:8080/2
-# {"value":"1"}
-
-sleep 2
-
-curl -X DELETE http://127.0.0.1:8080/1
-# {"error":"key (1) not exist"}
-
-curl -X DELETE http://127.0.0.1:8080/2 
-# no body
+```shell
+cp ./configs/.env.example .env
+vim .env
 ```
 
-#### How it works
+Taste it :heart:
 
-There are the main entities used:
+```shell
+# check code integrity
+make docs code test/smoke
 
-1. `Storage` - real key-value storage that implements `internal/fs/Driver` interface.
-2. `FileSystem` - implements `internal/fs/Driver` interface and aggregates the needed constraint:
-    ```
-        There can be any number of network connections, but a limited number 
-        of goroutines accessing the storage inside the application.
-    ```
-3. `Server` - APICache HTTP server to interrupt with any entity that implements `internal/fs/Driver` interface.
+# run application
+go run cmd/app/main.go
 
-The solution was inspired by different physical `Storage` and how Operation System 
-works with their drivers through `FileSystem` with own logical storage driver.
+# check everything works
+open 'http://127.0.0.1:8080/api/docs/'
+```
 
-So, `Server` doesn't know about inner `Storage` and how it works. 
-`internal/fs` package provides for `Server` some API - `internal/fs/Driver`. 
-We can use Specific `Driver` directly from `internal/drivers`, but `internal/fs` package
-provides the same interface and adds to Specific `Driver` validation and concurrent, 
-like Operation System high-level `FileSystem` manipulates with different hardware.
+Setup safe development
+
+```shell
+./scripts/pre-commit.sh
+```
+
+Testing
+-------
+
+Controls by [test.sh](./scripts/test.sh) or [Makefile](./Makefile) and contains:
+
+```shell
+# fast unit tests to be sure that no regression was 
+make test/smoke
+
+# same as test/smoke but with -race condition check
+make test/unit
+
+# integration (driver, etc.) tests that needed external resources, also with -race condition
+# ATTENTION: before run make sure that redis and memcached are available
+make driver/redis &
+make driver/memcached &
+make test/integration
+
+# combines both (test/unit and test/integration) to create local coverage report in HTML
+make test/coverage
+```

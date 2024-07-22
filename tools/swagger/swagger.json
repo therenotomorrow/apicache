@@ -1,0 +1,268 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "title": "apicache",
+        "contact": {
+            "name": "Mute Team",
+            "url": "https://github.com/therenotomorrow/apicache",
+            "email": "kkxnes@gmail.com"
+        },
+        "license": {
+            "name": "MIT",
+            "url": "https://github.com/therenotomorrow/apicache/blob/master/LICENSE"
+        },
+        "version": "0.0.1"
+    },
+    "paths": {
+        "/api/v1/{key}/": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "cache"
+                ],
+                "summary": "\"Retrieve key/value pair\"",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Key",
+                        "name": "key",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/apiv1get.Response"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.BadRequest"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/api.NotFound"
+                        }
+                    },
+                    "422": {
+                        "description": "Unprocessable Entity",
+                        "schema": {
+                            "$ref": "#/definitions/api.UnprocessableEntity"
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "$ref": "#/definitions/api.TooManyRequests"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.InternalServer"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "cache"
+                ],
+                "summary": "\"Insert key/value pair\"",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Key",
+                        "name": "key",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Payload",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/apiv1post.Payload"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/apiv1post.Response"
+                        }
+                    },
+                    "422": {
+                        "description": "Unprocessable Entity",
+                        "schema": {
+                            "$ref": "#/definitions/api.UnprocessableEntity"
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "$ref": "#/definitions/api.TooManyRequests"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.InternalServer"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "cache"
+                ],
+                "summary": "\"Delete key/value pair\"",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Key",
+                        "name": "key",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "422": {
+                        "description": "Unprocessable Entity",
+                        "schema": {
+                            "$ref": "#/definitions/api.UnprocessableEntity"
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "$ref": "#/definitions/api.TooManyRequests"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.InternalServer"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "api.BadRequest": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string",
+                    "enum": [
+                        "key is expired"
+                    ]
+                }
+            }
+        },
+        "api.InternalServer": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.NotFound": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string",
+                    "enum": [
+                        "key not exist"
+                    ]
+                }
+            }
+        },
+        "api.TooManyRequests": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string",
+                    "enum": [
+                        "connection timeout",
+                        "context timeout"
+                    ]
+                }
+            }
+        },
+        "api.UnprocessableEntity": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "apiv1get.Response": {
+            "type": "object",
+            "properties": {
+                "key": {
+                    "type": "string"
+                },
+                "val": {
+                    "$ref": "#/definitions/cache.ValType"
+                }
+            }
+        },
+        "apiv1post.Payload": {
+            "type": "object",
+            "required": [
+                "val"
+            ],
+            "properties": {
+                "ttl": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "val": {
+                    "$ref": "#/definitions/cache.ValType"
+                }
+            }
+        },
+        "apiv1post.Response": {
+            "type": "object",
+            "properties": {
+                "key": {
+                    "type": "string"
+                },
+                "val": {
+                    "$ref": "#/definitions/cache.ValType"
+                }
+            }
+        },
+        "cache.ValType": {
+            "type": "object",
+            "additionalProperties": {}
+        }
+    },
+    "tags": [
+        {
+            "name": "cache"
+        }
+    ]
+}
