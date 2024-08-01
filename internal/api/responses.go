@@ -6,6 +6,14 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
+func BadRequestError(err error) *echo.HTTPError {
+	return &echo.HTTPError{Code: http.StatusBadRequest, Message: err, Internal: nil}
+}
+
+func NotFoundError(err error) *echo.HTTPError {
+	return &echo.HTTPError{Code: http.StatusNotFound, Message: err, Internal: nil}
+}
+
 func UnprocessableEntityError(err error) *echo.HTTPError {
 	return &echo.HTTPError{Code: http.StatusUnprocessableEntity, Message: err, Internal: nil}
 }
@@ -21,12 +29,4 @@ func InternalServerError(err error, message ...string) *echo.HTTPError {
 	}
 
 	return herr
-}
-
-func NotFoundError(err error) *echo.HTTPError {
-	return &echo.HTTPError{Code: http.StatusNotFound, Message: err, Internal: nil}
-}
-
-func BadRequestError(err error) *echo.HTTPError {
-	return &echo.HTTPError{Code: http.StatusBadRequest, Message: err, Internal: nil}
 }
