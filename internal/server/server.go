@@ -27,8 +27,6 @@ func New(settings *config.Settings, cache *cache.Cache) *Server {
 	router := echo.New()
 
 	router.Debug = settings.Debug
-	router.HideBanner = true
-	router.HidePort = true
 
 	router.Logger.SetLevel(log.INFO)
 

@@ -13,7 +13,6 @@ import (
 	"github.com/kxnes/go-interviews/apicache/test/toolkit"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/gommon/log"
-	"github.com/stretchr/testify/assert"
 )
 
 func echoHandler(etx echo.Context) error {
@@ -52,14 +51,12 @@ func TestUnitNew(t *testing.T) {
 
 			srv := server.New(settings, nil)
 
-			assert.Equal(t, *settings, srv.Settings())
+			toolkit.Assert(t, toolkit.Got(nil, *settings), toolkit.Want(srv.Settings(), nil))
 
 			router := srv.UnsafeRouter()
 
-			assert.Equal(t, settings.Debug, router.Debug)
-			assert.True(t, router.HideBanner)
-			assert.True(t, router.HidePort)
-			assert.Equal(t, log.Lvl(2), router.Logger.Level()) // 2 - INFO
+			toolkit.Assert(t, toolkit.Got(nil, settings.Debug), toolkit.Want(router.Debug, nil))
+			toolkit.Assert(t, toolkit.Got(nil, log.Lvl(2)), toolkit.Want(router.Logger.Level(), nil))
 
 			existed := make([]string, 0)
 			for _, route := range router.Routes() {
@@ -78,7 +75,7 @@ func TestUnitNew(t *testing.T) {
 			sort.Strings(expected)
 			sort.Strings(existed)
 
-			assert.Equal(t, expected, existed)
+			toolkit.Assert(t, toolkit.Got(nil, existed), toolkit.Want(expected, nil))
 		})
 	}
 }

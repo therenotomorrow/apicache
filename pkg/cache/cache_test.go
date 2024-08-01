@@ -133,17 +133,14 @@ func TestUnitMustNew(t *testing.T) {
 	tests := []struct {
 		name string
 		args args
-		want bool
 	}{
 		{
 			name: "success",
 			args: args{cfg: config(), driver: driver()},
-			want: false,
 		},
 		{
 			name: "failure",
 			args: args{cfg: cache.Config{MaxConn: invalidMaxConn, ConnTimeout: invalidConnTimeout}, driver: driver()},
-			want: true,
 		},
 	}
 

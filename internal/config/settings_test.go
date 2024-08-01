@@ -37,10 +37,9 @@ func TestUnitMustNew(t *testing.T) {
 	tests := []struct {
 		name string
 		args args
-		want bool
 	}{
-		{name: "success", args: args{filename: toolkit.EnvFile()}, want: false},
-		{name: "failure", args: args{filename: ".env.invalid"}, want: true},
+		{name: "success", args: args{filename: toolkit.EnvFile()}},
+		{name: "failure", args: args{filename: ".env.invalid"}},
 	}
 
 	for _, test := range tests {
