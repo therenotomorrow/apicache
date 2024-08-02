@@ -3,12 +3,12 @@ package main
 import (
 	"context"
 
-	"github.com/kxnes/go-interviews/apicache/internal/config"
-	"github.com/kxnes/go-interviews/apicache/internal/server"
-	"github.com/kxnes/go-interviews/apicache/internal/services/cache"
-	"github.com/kxnes/go-interviews/apicache/pkg/drivers/machine"
-	"github.com/kxnes/go-interviews/apicache/pkg/drivers/memcached"
-	"github.com/kxnes/go-interviews/apicache/pkg/drivers/redis"
+	"github.com/therenotomorrow/apicache/internal/config"
+	"github.com/therenotomorrow/apicache/internal/server"
+	"github.com/therenotomorrow/apicache/internal/services/cache"
+	"github.com/therenotomorrow/apicache/pkg/drivers/machine"
+	"github.com/therenotomorrow/apicache/pkg/drivers/memcached"
+	"github.com/therenotomorrow/apicache/pkg/drivers/redis"
 )
 
 // @Title            apicache

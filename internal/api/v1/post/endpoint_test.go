@@ -9,10 +9,10 @@ import (
 	"testing"
 	"time"
 
-	apiv1post "github.com/kxnes/go-interviews/apicache/internal/api/v1/post"
-	"github.com/kxnes/go-interviews/apicache/internal/domain"
-	"github.com/kxnes/go-interviews/apicache/test/toolkit"
 	"github.com/labstack/echo/v4"
+	apiv1post "github.com/therenotomorrow/apicache/internal/api/v1/post"
+	"github.com/therenotomorrow/apicache/internal/domain"
+	"github.com/therenotomorrow/apicache/test/toolkit"
 )
 
 const (

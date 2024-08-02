@@ -7,13 +7,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kxnes/go-interviews/apicache/internal/services/cache"
-	"github.com/kxnes/go-interviews/apicache/pkg/drivers"
-	"github.com/kxnes/go-interviews/apicache/pkg/drivers/redis"
-	"github.com/kxnes/go-interviews/apicache/test/toolkit"
 	redislib "github.com/redis/go-redis/v9"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/therenotomorrow/apicache/internal/services/cache"
+	"github.com/therenotomorrow/apicache/pkg/drivers"
+	"github.com/therenotomorrow/apicache/pkg/drivers/redis"
+	"github.com/therenotomorrow/apicache/test/toolkit"
 )
 
 const (

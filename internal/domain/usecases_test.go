@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kxnes/go-interviews/apicache/internal/domain"
-	"github.com/kxnes/go-interviews/apicache/test/toolkit"
+	"github.com/therenotomorrow/apicache/internal/domain"
+	"github.com/therenotomorrow/apicache/test/toolkit"
 )
 
 const (

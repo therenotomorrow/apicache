@@ -7,10 +7,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/kxnes/go-interviews/apicache/pkg/blender"
-	"github.com/kxnes/go-interviews/apicache/test/toolkit"
 	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/assert"
+	"github.com/therenotomorrow/apicache/pkg/blender"
+	"github.com/therenotomorrow/apicache/test/toolkit"
 )
 
 type (

@@ -4,7 +4,7 @@ import (
 	"context"
 	"sync"
 
-	"github.com/kxnes/go-interviews/apicache/pkg/drivers"
+	"github.com/therenotomorrow/apicache/pkg/drivers"
 )
 
 type Machine struct {

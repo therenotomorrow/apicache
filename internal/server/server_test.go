@@ -8,11 +8,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kxnes/go-interviews/apicache/internal/config"
-	"github.com/kxnes/go-interviews/apicache/internal/server"
-	"github.com/kxnes/go-interviews/apicache/test/toolkit"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/gommon/log"
+	"github.com/therenotomorrow/apicache/internal/config"
+	"github.com/therenotomorrow/apicache/internal/server"
+	"github.com/therenotomorrow/apicache/test/toolkit"
 )
 
 func echoHandler(_ echo.Context) error {

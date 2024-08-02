@@ -5,9 +5,9 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/kxnes/go-interviews/apicache/internal/config"
-	"github.com/kxnes/go-interviews/apicache/test/toolkit"
 	"github.com/stretchr/testify/require"
+	"github.com/therenotomorrow/apicache/internal/config"
+	"github.com/therenotomorrow/apicache/test/toolkit"
 )
 
 var errParseEnv = errors.New("parse env error: " +

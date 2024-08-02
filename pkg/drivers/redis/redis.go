@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/kxnes/go-interviews/apicache/pkg/drivers"
 	"github.com/redis/go-redis/v9"
+	"github.com/therenotomorrow/apicache/pkg/drivers"
 )
 
 type (

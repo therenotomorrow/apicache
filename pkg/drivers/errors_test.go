@@ -3,8 +3,8 @@ package drivers_test
 import (
 	"testing"
 
-	"github.com/kxnes/go-interviews/apicache/pkg/drivers"
-	"github.com/kxnes/go-interviews/apicache/test/toolkit"
+	"github.com/therenotomorrow/apicache/pkg/drivers"
+	"github.com/therenotomorrow/apicache/test/toolkit"
 )
 
 func TestUnitErrNotExist(t *testing.T) {

@@ -6,7 +6,7 @@ import (
 	"fmt"
 
 	"github.com/bradfitz/gomemcache/memcache"
-	"github.com/kxnes/go-interviews/apicache/pkg/drivers"
+	"github.com/therenotomorrow/apicache/pkg/drivers"
 )
 
 type (
@@ -43,6 +43,7 @@ func (d *Memcached) Set(_ context.Context, key string, val string) error {
 		Value:      []byte(val),
 		Flags:      0,
 		Expiration: 0,
+		CasID:      0,
 	}
 
 	err := d.client.Set(item)

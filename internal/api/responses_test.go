@@ -7,9 +7,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/kxnes/go-interviews/apicache/internal/api"
-	"github.com/kxnes/go-interviews/apicache/test/toolkit"
 	"github.com/labstack/echo/v4"
+	"github.com/therenotomorrow/apicache/internal/api"
+	"github.com/therenotomorrow/apicache/test/toolkit"
 )
 
 const (

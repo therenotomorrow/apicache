@@ -3,8 +3,8 @@ package domain_test
 import (
 	"testing"
 
-	"github.com/kxnes/go-interviews/apicache/internal/domain"
-	"github.com/kxnes/go-interviews/apicache/test/toolkit"
+	"github.com/therenotomorrow/apicache/internal/domain"
+	"github.com/therenotomorrow/apicache/test/toolkit"
 )
 
 func TestUnitErrKeyNotExist(t *testing.T) {

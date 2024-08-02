@@ -8,10 +8,10 @@ import (
 	"strings"
 	"testing"
 
-	apiv1get "github.com/kxnes/go-interviews/apicache/internal/api/v1/get"
-	"github.com/kxnes/go-interviews/apicache/internal/domain"
-	"github.com/kxnes/go-interviews/apicache/test/toolkit"
 	"github.com/labstack/echo/v4"
+	apiv1get "github.com/therenotomorrow/apicache/internal/api/v1/get"
+	"github.com/therenotomorrow/apicache/internal/domain"
+	"github.com/therenotomorrow/apicache/test/toolkit"
 )
 
 const (

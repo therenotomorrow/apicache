@@ -7,15 +7,15 @@ import (
 	"os/signal"
 	"syscall"
 
-	apiv1delete "github.com/kxnes/go-interviews/apicache/internal/api/v1/delete"
-	apiv1get "github.com/kxnes/go-interviews/apicache/internal/api/v1/get"
-	apiv1post "github.com/kxnes/go-interviews/apicache/internal/api/v1/post"
-	"github.com/kxnes/go-interviews/apicache/internal/config"
-	"github.com/kxnes/go-interviews/apicache/internal/services/cache"
-	"github.com/kxnes/go-interviews/apicache/tools/swagger"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/labstack/gommon/log"
+	apiv1delete "github.com/therenotomorrow/apicache/internal/api/v1/delete"
+	apiv1get "github.com/therenotomorrow/apicache/internal/api/v1/get"
+	apiv1post "github.com/therenotomorrow/apicache/internal/api/v1/post"
+	"github.com/therenotomorrow/apicache/internal/config"
+	"github.com/therenotomorrow/apicache/internal/services/cache"
+	"github.com/therenotomorrow/apicache/tools/swagger"
 )
 
 type Server struct {

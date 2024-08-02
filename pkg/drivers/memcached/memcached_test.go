@@ -6,12 +6,12 @@ import (
 	"testing"
 
 	"github.com/bradfitz/gomemcache/memcache"
-	"github.com/kxnes/go-interviews/apicache/internal/services/cache"
-	"github.com/kxnes/go-interviews/apicache/pkg/drivers"
-	"github.com/kxnes/go-interviews/apicache/pkg/drivers/memcached"
-	"github.com/kxnes/go-interviews/apicache/test/toolkit"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/therenotomorrow/apicache/internal/services/cache"
+	"github.com/therenotomorrow/apicache/pkg/drivers"
+	"github.com/therenotomorrow/apicache/pkg/drivers/memcached"
+	"github.com/therenotomorrow/apicache/test/toolkit"
 )
 
 const (
@@ -34,9 +34,9 @@ func TestMain(m *testing.M) {
 
 	_ = client.FlushAll()
 
-	_ = client.Set(&memcache.Item{Key: "insertKey", Value: []byte("insertVal"), Flags: 0, Expiration: 0})
-	_ = client.Set(&memcache.Item{Key: "updateKey", Value: []byte("updateVal"), Flags: 0, Expiration: 0})
-	_ = client.Set(&memcache.Item{Key: "deleteKey", Value: []byte("deleteVal"), Flags: 0, Expiration: 0})
+	_ = client.Set(&memcache.Item{Key: "insertKey", Value: []byte("insertVal"), Flags: 0, Expiration: 0, CasID: 0})
+	_ = client.Set(&memcache.Item{Key: "updateKey", Value: []byte("updateVal"), Flags: 0, Expiration: 0, CasID: 0})
+	_ = client.Set(&memcache.Item{Key: "deleteKey", Value: []byte("deleteVal"), Flags: 0, Expiration: 0, CasID: 0})
 
 	m.Run()
 }

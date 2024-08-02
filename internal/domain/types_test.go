@@ -3,7 +3,7 @@ package domain_test
 import (
 	"testing"
 
-	"github.com/kxnes/go-interviews/apicache/internal/domain"
+	"github.com/therenotomorrow/apicache/internal/domain"
 )
 
 func TestUnitValType(t *testing.T) {

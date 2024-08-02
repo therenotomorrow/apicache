@@ -4,8 +4,8 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/kxnes/go-interviews/apicache/internal/api"
-	"github.com/kxnes/go-interviews/apicache/test/toolkit"
+	"github.com/therenotomorrow/apicache/internal/api"
+	"github.com/therenotomorrow/apicache/test/toolkit"
 )
 
 func TestUnitBadRequest(t *testing.T) {

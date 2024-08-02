@@ -8,8 +8,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/kxnes/go-interviews/apicache/internal/domain"
-	"github.com/kxnes/go-interviews/apicache/pkg/drivers"
+	"github.com/therenotomorrow/apicache/internal/domain"
+	"github.com/therenotomorrow/apicache/pkg/drivers"
 )
 
 const (

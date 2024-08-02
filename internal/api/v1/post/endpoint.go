@@ -4,10 +4,10 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/kxnes/go-interviews/apicache/internal/api"
-	"github.com/kxnes/go-interviews/apicache/internal/domain"
-	"github.com/kxnes/go-interviews/apicache/pkg/blender"
 	"github.com/labstack/echo/v4"
+	"github.com/therenotomorrow/apicache/internal/api"
+	"github.com/therenotomorrow/apicache/internal/domain"
+	"github.com/therenotomorrow/apicache/pkg/blender"
 )
 
 type (

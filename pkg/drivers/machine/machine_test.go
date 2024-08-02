@@ -4,12 +4,12 @@ import (
 	"context"
 	"testing"
 
-	"github.com/kxnes/go-interviews/apicache/internal/services/cache"
-	"github.com/kxnes/go-interviews/apicache/pkg/drivers"
-	"github.com/kxnes/go-interviews/apicache/pkg/drivers/machine"
-	"github.com/kxnes/go-interviews/apicache/test/toolkit"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/therenotomorrow/apicache/internal/services/cache"
+	"github.com/therenotomorrow/apicache/pkg/drivers"
+	"github.com/therenotomorrow/apicache/pkg/drivers/machine"
+	"github.com/therenotomorrow/apicache/test/toolkit"
 )
 
 func TestUnitNew(t *testing.T) {
