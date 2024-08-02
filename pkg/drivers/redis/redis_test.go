@@ -7,7 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kxnes/go-interviews/apicache/pkg/cache"
+	"github.com/kxnes/go-interviews/apicache/internal/services/cache"
+	"github.com/kxnes/go-interviews/apicache/pkg/drivers"
 	"github.com/kxnes/go-interviews/apicache/pkg/drivers/redis"
 	"github.com/kxnes/go-interviews/apicache/test/toolkit"
 	redislib "github.com/redis/go-redis/v9"
@@ -21,8 +22,10 @@ const (
 )
 
 var (
-	errClosed = fmt.Errorf("driver error: %w", redislib.ErrClosed)
-	errDriver = errors.New("driver error: dial tcp :0: connect: connection refused")
+	errDriverGet    = errors.New("Redis.Get() error: dial tcp :0: connect: connection refused")
+	errDriverSet    = errors.New("Redis.Set() error: dial tcp :0: connect: connection refused")
+	errDriverDel    = errors.New("Redis.Del() error: dial tcp :0: connect: connection refused")
+	errDriverClosed = fmt.Errorf("Redis.Close() error: %w", redislib.ErrClosed)
 )
 
 func config() redis.Config {
@@ -73,12 +76,12 @@ func TestIntegrationRedisGet(t *testing.T) {
 		{
 			name: "key not exist",
 			args: args{cfg: config(), key: "invalidKey"},
-			want: toolkit.Want("", cache.ErrKeyNotExist),
+			want: toolkit.Want("", drivers.ErrNotExist),
 		},
 		{
 			name: "driver error",
 			args: args{cfg: redis.Config{Addr: invalidAddr}, key: "key"},
-			want: toolkit.Want("", errDriver),
+			want: toolkit.Want("", errDriverGet),
 		},
 	}
 
@@ -123,7 +126,7 @@ func TestIntegrationRedisSet(t *testing.T) {
 		{
 			name: "driver error",
 			args: args{cfg: redis.Config{Addr: invalidAddr}, key: "key", val: ""},
-			want: toolkit.Err(errDriver),
+			want: toolkit.Err(errDriverSet),
 		},
 	}
 
@@ -179,7 +182,7 @@ func TestIntegrationRedisDel(t *testing.T) {
 		{
 			name: "driver error",
 			args: args{cfg: redis.Config{Addr: invalidAddr}, key: "key"},
-			want: toolkit.Err(errDriver),
+			want: toolkit.Err(errDriverDel),
 		},
 	}
 
@@ -220,7 +223,7 @@ func TestUnitRedisClose(t *testing.T) {
 		want toolkit.W[any]
 	}{
 		{name: "success", args: args{cfg: config()}, want: toolkit.Err(nil)},
-		{name: "failure", args: args{cfg: config()}, want: toolkit.Err(errClosed)},
+		{name: "failure", args: args{cfg: config()}, want: toolkit.Err(errDriverClosed)},
 	}
 
 	for _, test := range tests {

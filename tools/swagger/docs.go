@@ -234,7 +234,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "val": {
-                    "$ref": "#/definitions/cache.ValType"
+                    "$ref": "#/definitions/domain.ValType"
                 }
             }
         },
@@ -249,7 +249,7 @@ const docTemplate = `{
                     "minimum": 0
                 },
                 "val": {
-                    "$ref": "#/definitions/cache.ValType"
+                    "$ref": "#/definitions/domain.ValType"
                 }
             }
         },
@@ -260,11 +260,11 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "val": {
-                    "$ref": "#/definitions/cache.ValType"
+                    "$ref": "#/definitions/domain.ValType"
                 }
             }
         },
-        "cache.ValType": {
+        "domain.ValType": {
             "type": "object",
             "additionalProperties": {}
         }
@@ -278,7 +278,7 @@ const docTemplate = `{
 
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
-	Version:          "0.0.1",
+	Version:          "0.0.2",
 	Host:             "",
 	BasePath:         "",
 	Schemes:          []string{},

@@ -12,7 +12,7 @@ type DriverMock struct {
 func NewDriverMock() *DriverMock {
 	return &DriverMock{
 		CloseMock: func() error { return nil },
-		GetMock:   func(_ context.Context, _ string) (string, error) { return "", nil },
+		GetMock:   nil,
 		SetMock:   func(_ context.Context, _ string, _ string) error { return nil },
 		DelMock:   func(_ context.Context, _ string) error { return nil },
 	}

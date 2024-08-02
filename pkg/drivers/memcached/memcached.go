@@ -3,9 +3,10 @@ package memcached
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/bradfitz/gomemcache/memcache"
-	"github.com/kxnes/go-interviews/apicache/pkg/cache"
+	"github.com/kxnes/go-interviews/apicache/pkg/drivers"
 )
 
 type (
@@ -26,11 +27,11 @@ func (d *Memcached) Get(_ context.Context, key string) (string, error) {
 	item, err := d.client.Get(key)
 
 	if errors.Is(err, memcache.ErrCacheMiss) {
-		return "", cache.ErrKeyNotExist
+		return "", drivers.ErrNotExist
 	}
 
 	if err != nil {
-		return "", cache.DriverError(err)
+		return "", fmt.Errorf("Memcached.Get() error: %w", err)
 	}
 
 	return string(item.Value), nil
@@ -45,8 +46,11 @@ func (d *Memcached) Set(_ context.Context, key string, val string) error {
 	}
 
 	err := d.client.Set(item)
+	if err != nil {
+		return fmt.Errorf("Memcached.Set() error: %w", err)
+	}
 
-	return cache.DriverError(err)
+	return nil
 }
 
 func (d *Memcached) Del(_ context.Context, key string) error {
@@ -56,7 +60,11 @@ func (d *Memcached) Del(_ context.Context, key string) error {
 		return nil
 	}
 
-	return cache.DriverError(err)
+	if err != nil {
+		return fmt.Errorf("Memcached.Del() error: %w", err)
+	}
+
+	return nil
 }
 
 func (d *Memcached) Close() error {

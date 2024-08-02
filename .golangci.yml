@@ -26,9 +26,3 @@ issues:
   fix: true
   max-same-issues: 0
   max-issues-per-linter: 0
-
-linters-settings:
-  wrapcheck:
-    ignorePackageGlobs:
-      - github.com/labstack/echo/*
-      - github.com/kxnes/go-interviews/apicache/pkg/cache*

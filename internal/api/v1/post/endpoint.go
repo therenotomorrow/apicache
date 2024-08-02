@@ -3,25 +3,21 @@ package apiv1post
 import (
 	"errors"
 	"net/http"
-	"time"
 
 	"github.com/kxnes/go-interviews/apicache/internal/api"
+	"github.com/kxnes/go-interviews/apicache/internal/domain"
 	"github.com/kxnes/go-interviews/apicache/pkg/blender"
-	"github.com/kxnes/go-interviews/apicache/pkg/cache"
 	"github.com/labstack/echo/v4"
 )
 
 type (
-	Params struct {
-		Key string `param:"key" validate:"required"`
-	}
 	Payload struct {
-		Val cache.ValType `json:"val" validate:"required"`
-		TTL int           `json:"ttl" validate:"omitempty,min=0"`
+		Val domain.ValType `json:"val" validate:"required"`
+		TTL int            `json:"ttl" validate:"omitempty,min=0"`
 	}
 	Response struct {
-		Key string        `json:"key"`
-		Val cache.ValType `json:"val"`
+		Key string         `json:"key"`
+		Val domain.ValType `json:"val"`
 	}
 )
 
@@ -37,9 +33,10 @@ type (
 // @Failure    429 {object} api.TooManyRequests
 // @Failure    500 {object} api.InternalServer
 // @Router     /api/v1/{key}/ [post].
-func Post(cacher *cache.Cache) echo.HandlerFunc {
-	params := blender.New[Params]()
+func Post(cache domain.CacheSetter) echo.HandlerFunc {
+	params := blender.New[api.Params]()
 	payload := blender.New[Payload]()
+	useCase := domain.NewSetUseCase(cache)
 
 	return func(etx echo.Context) error {
 		params, err := params.Path(etx)
@@ -52,15 +49,15 @@ func Post(cacher *cache.Cache) echo.HandlerFunc {
 			return api.UnprocessableEntityError(err)
 		}
 
-		err = cacher.Set(etx.Request().Context(), params.Key, payload.Val, time.Duration(payload.TTL)*time.Second)
+		err = useCase.Execute(etx.Request().Context(), params.Key, payload.Val, payload.TTL)
 		if err == nil {
 			return etx.JSON(http.StatusCreated, &Response{Key: params.Key, Val: payload.Val})
 		}
 
 		switch {
-		case errors.Is(err, cache.ErrConnTimeout):
+		case errors.Is(err, domain.ErrConnTimeout):
 			return api.TooManyRequestsError(err)
-		case errors.Is(err, cache.ErrContextTimeout):
+		case errors.Is(err, domain.ErrContextTimeout):
 			return api.TooManyRequestsError(err)
 		}
 

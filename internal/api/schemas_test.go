@@ -1,13 +1,17 @@
-package api
+package api_test
 
 import (
-	"github.com/kxnes/go-interviews/apicache/test/toolkit"
 	"reflect"
 	"testing"
+
+	"github.com/kxnes/go-interviews/apicache/internal/api"
+	"github.com/kxnes/go-interviews/apicache/test/toolkit"
 )
 
-func TestBadRequest(t *testing.T) {
-	tags := reflect.TypeOf(new(BadRequest)).Elem().Field(0).Tag
+func TestUnitBadRequest(t *testing.T) {
+	t.Parallel()
+
+	tags := reflect.TypeOf(new(api.BadRequest)).Elem().Field(0).Tag
 
 	toolkit.Assert(t,
 		toolkit.Got(nil, tags.Get("enums")),
@@ -20,8 +24,10 @@ func TestBadRequest(t *testing.T) {
 	)
 }
 
-func TestNotFound(t *testing.T) {
-	tags := reflect.TypeOf(new(NotFound)).Elem().Field(0).Tag
+func TestUnitNotFound(t *testing.T) {
+	t.Parallel()
+
+	tags := reflect.TypeOf(new(api.NotFound)).Elem().Field(0).Tag
 
 	toolkit.Assert(t,
 		toolkit.Got(nil, tags.Get("enums")),
@@ -34,8 +40,10 @@ func TestNotFound(t *testing.T) {
 	)
 }
 
-func TestUnprocessableEntity(t *testing.T) {
-	tags := reflect.TypeOf(new(UnprocessableEntity)).Elem().Field(0).Tag
+func TestUnitUnprocessableEntity(t *testing.T) {
+	t.Parallel()
+
+	tags := reflect.TypeOf(new(api.UnprocessableEntity)).Elem().Field(0).Tag
 
 	toolkit.Assert(t,
 		toolkit.Got(nil, tags.Get("json")),
@@ -43,8 +51,10 @@ func TestUnprocessableEntity(t *testing.T) {
 	)
 }
 
-func TestTooManyRequests(t *testing.T) {
-	tags := reflect.TypeOf(new(TooManyRequests)).Elem().Field(0).Tag
+func TestUnitTooManyRequests(t *testing.T) {
+	t.Parallel()
+
+	tags := reflect.TypeOf(new(api.TooManyRequests)).Elem().Field(0).Tag
 
 	toolkit.Assert(t,
 		toolkit.Got(nil, tags.Get("enums")),
@@ -57,8 +67,10 @@ func TestTooManyRequests(t *testing.T) {
 	)
 }
 
-func TestInternalServer(t *testing.T) {
-	tags := reflect.TypeOf(new(InternalServer)).Elem().Field(0).Tag
+func TestUnitInternalServer(t *testing.T) {
+	t.Parallel()
+
+	tags := reflect.TypeOf(new(api.InternalServer)).Elem().Field(0).Tag
 
 	toolkit.Assert(t,
 		toolkit.Got(nil, tags.Get("json")),

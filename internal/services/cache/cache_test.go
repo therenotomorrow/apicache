@@ -11,7 +11,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kxnes/go-interviews/apicache/pkg/cache"
+	"github.com/kxnes/go-interviews/apicache/internal/domain"
+	"github.com/kxnes/go-interviews/apicache/internal/services/cache"
+	"github.com/kxnes/go-interviews/apicache/pkg/drivers"
 	"github.com/kxnes/go-interviews/apicache/test/mocks"
 	"github.com/kxnes/go-interviews/apicache/test/toolkit"
 	"github.com/stretchr/testify/assert"
@@ -29,15 +31,11 @@ var (
 	errDummy        = errors.New("dummy error")
 	errClosedDriver = errors.New("closed")
 	errClosed       = fmt.Errorf("driver error: %w", errClosedDriver)
-	errMarshal      = fmt.Errorf("driver error: json: "+
-		"error calling MarshalJSON for type cache_test.cannotMarshal: %w", errDummy)
-	errUnmarshal = errors.New("driver error: unexpected end of JSON input")
+	errDummyDriver  = fmt.Errorf("driver error: %w", errDummy)
 )
 
-type cannotMarshal struct{}
-
-func (c cannotMarshal) MarshalJSON() ([]byte, error) {
-	return nil, errDummy
+func value() []byte {
+	return []byte(`{"age":42,"hello":"world"}`)
 }
 
 func config() cache.Config {
@@ -46,33 +44,6 @@ func config() cache.Config {
 
 func driver() *mocks.DriverMock {
 	return mocks.NewDriverMock()
-}
-
-func TestUnitDriverError(t *testing.T) {
-	t.Parallel()
-
-	type args struct {
-		err error
-	}
-
-	tests := []struct {
-		name string
-		args args
-		want toolkit.W[any]
-	}{
-		{name: "without error", args: args{err: nil}, want: toolkit.Err(nil)},
-		{name: "with error", args: args{err: errDummy}, want: toolkit.Err(fmt.Errorf("driver error: %w", errDummy))},
-	}
-
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			t.Parallel()
-
-			err := cache.DriverError(test.args.err)
-
-			toolkit.Assert(t, toolkit.Got[any](err), test.want)
-		})
-	}
 }
 
 func TestUnitNew(t *testing.T) {
@@ -161,30 +132,6 @@ func TestUnitMustNew(t *testing.T) {
 	}
 }
 
-func TestUnitCacheGetErrEmptyKey(t *testing.T) {
-	t.Parallel()
-
-	ctx := context.Background()
-	obj := cache.MustNew(config(), driver())
-
-	val, err := obj.Get(ctx, "")
-
-	toolkit.Assert(t, toolkit.Got(err, val), toolkit.Want[cache.ValType](nil, cache.ErrEmptyKey))
-}
-
-func TestUnitCacheGetErrUnmarshal(t *testing.T) {
-	t.Parallel()
-
-	ctx := context.Background()
-	obj := cache.MustNew(config(), driver())
-
-	_ = obj.Set(ctx, "insertKey", map[string]any{"hello": "world", "age": 42}, 0)
-
-	val, err := obj.Get(ctx, "insertKey")
-
-	toolkit.Assert(t, toolkit.Got(err, val), toolkit.Want[cache.ValType](nil, errUnmarshal))
-}
-
 func TestUnitCacheGetErrClosed(t *testing.T) {
 	t.Parallel()
 
@@ -193,9 +140,9 @@ func TestUnitCacheGetErrClosed(t *testing.T) {
 
 	_ = obj.Close()
 
-	val, err := obj.Get(ctx, "insertKey")
+	got, err := obj.Get(ctx, "insertKey")
 
-	toolkit.Assert(t, toolkit.Got(err, val), toolkit.Want[cache.ValType](nil, cache.ErrClosed))
+	toolkit.Assert(t, toolkit.Got(err, got), toolkit.Want[[]byte](nil, domain.ErrClosed))
 }
 
 func TestUnitCacheGetErrConnTimeout(t *testing.T) {
@@ -224,21 +171,21 @@ func TestUnitCacheGetErrConnTimeout(t *testing.T) {
 	waiter.Add(1)
 
 	go func() {
-		_ = obj.Set(ctx, "insertKey", map[string]any{"hello": "world", "age": 42}, 0)
+		_ = obj.Set(ctx, "insertKey", value(), time.Time{})
 
 		waiter.Done()
 	}()
 	time.Sleep(connTimeout)
 
-	val, err := obj.Get(ctx, "insertKey")
+	got, err := obj.Get(ctx, "insertKey")
 
-	toolkit.Assert(t, toolkit.Got(err, val), toolkit.Want[cache.ValType](nil, cache.ErrConnTimeout))
+	toolkit.Assert(t, toolkit.Got(err, got), toolkit.Want[[]byte](nil, domain.ErrConnTimeout))
 
 	waiter.Wait()
 
-	val, err = obj.Get(ctx, "insertKey")
+	got, err = obj.Get(ctx, "insertKey")
 
-	toolkit.Assert(t, toolkit.Got(err, val), toolkit.Want(cache.ValType{"hello": "world", "age": float64(42)}, nil))
+	toolkit.Assert(t, toolkit.Got(err, got), toolkit.Want(value(), nil))
 }
 
 func TestUnitCacheGetErrContextTimeout(t *testing.T) {
@@ -267,7 +214,7 @@ func TestUnitCacheGetErrContextTimeout(t *testing.T) {
 	waiter.Add(1)
 
 	go func() {
-		_ = obj.Set(ctx, "insertKey", map[string]any{"hello": "world", "age": 42}, 0)
+		_ = obj.Set(ctx, "insertKey", value(), time.Time{})
 
 		waiter.Done()
 	}()
@@ -276,15 +223,15 @@ func TestUnitCacheGetErrContextTimeout(t *testing.T) {
 	newCtx, cancel := context.WithCancel(ctx)
 	cancel()
 
-	val, err := obj.Get(newCtx, "insertKey")
+	got, err := obj.Get(newCtx, "insertKey")
 
-	toolkit.Assert(t, toolkit.Got(err, val), toolkit.Want[cache.ValType](nil, cache.ErrContextTimeout))
+	toolkit.Assert(t, toolkit.Got(err, got), toolkit.Want[[]byte](nil, domain.ErrContextTimeout))
 
 	waiter.Wait()
 
-	val, err = obj.Get(ctx, "insertKey")
+	got, err = obj.Get(ctx, "insertKey")
 
-	toolkit.Assert(t, toolkit.Got(err, val), toolkit.Want(cache.ValType{"hello": "world", "age": float64(42)}, nil))
+	toolkit.Assert(t, toolkit.Got(err, got), toolkit.Want(value(), nil))
 }
 
 func TestUnitCacheGetErrDriver(t *testing.T) {
@@ -299,44 +246,11 @@ func TestUnitCacheGetErrDriver(t *testing.T) {
 		return "", errDummy
 	}
 
-	_ = obj.Set(ctx, "insertKey", map[string]any{"hello": "world", "age": 42}, 0)
+	_ = obj.Set(ctx, "insertKey", value(), time.Time{})
 
-	val, err := obj.Get(ctx, "insertKey")
+	got, err := obj.Get(ctx, "insertKey")
 
-	toolkit.Assert(t, toolkit.Got(err, val), toolkit.Want[cache.ValType](nil, errDummy))
-}
-
-func TestUnitCacheSetErrEmptyKey(t *testing.T) {
-	t.Parallel()
-
-	ctx := context.Background()
-	obj := cache.MustNew(config(), driver())
-
-	err := obj.Set(ctx, "", map[string]any{"hello": "world", "age": 42}, 0)
-
-	toolkit.Assert(t, toolkit.Got[any](err), toolkit.Err(cache.ErrEmptyKey))
-}
-
-func TestUnitCacheSetErrEmptyVal(t *testing.T) {
-	t.Parallel()
-
-	ctx := context.Background()
-	obj := cache.MustNew(config(), driver())
-
-	err := obj.Set(ctx, "insertKey", nil, 0)
-
-	toolkit.Assert(t, toolkit.Got[any](err), toolkit.Err(cache.ErrEmptyVal))
-}
-
-func TestUnitCacheSetErrMarshal(t *testing.T) {
-	t.Parallel()
-
-	ctx := context.Background()
-	obj := cache.MustNew(config(), driver())
-
-	err := obj.Set(ctx, "insertKey", map[string]any{"hello": cannotMarshal{}}, 0)
-
-	toolkit.Assert(t, toolkit.Got[any](err), toolkit.Err(errMarshal))
+	toolkit.Assert(t, toolkit.Got(err, got), toolkit.Want[[]byte](nil, errDummyDriver))
 }
 
 func TestUnitCacheSetErrClosed(t *testing.T) {
@@ -347,9 +261,9 @@ func TestUnitCacheSetErrClosed(t *testing.T) {
 
 	_ = obj.Close()
 
-	err := obj.Set(ctx, "insertKey", map[string]any{"hello": "world", "age": 42}, 0)
+	err := obj.Set(ctx, "insertKey", value(), time.Time{})
 
-	toolkit.Assert(t, toolkit.Got[any](err), toolkit.Err(cache.ErrClosed))
+	toolkit.Assert(t, toolkit.Got[any](err), toolkit.Err(domain.ErrClosed))
 }
 
 func TestUnitCacheSetErrConnTimeout(t *testing.T) {
@@ -370,21 +284,21 @@ func TestUnitCacheSetErrConnTimeout(t *testing.T) {
 	waiter.Add(1)
 
 	go func() {
-		_ = obj.Set(ctx, "insertKey", map[string]any{"hello": "world", "age": 42}, 0)
+		_ = obj.Set(ctx, "insertKey", value(), time.Time{})
 
 		waiter.Done()
 	}()
 	time.Sleep(connTimeout)
 
-	err := obj.Set(ctx, "newInsertKey", map[string]any{"hello": "world", "age": 42}, 0)
+	err := obj.Set(ctx, "newInsertKey", value(), time.Time{})
 
-	toolkit.Assert(t, toolkit.Got[any](err), toolkit.Err(cache.ErrConnTimeout))
+	toolkit.Assert(t, toolkit.Got[any](err), toolkit.Err(domain.ErrConnTimeout))
 
 	waiter.Wait()
 
 	_, err = obj.Get(ctx, "newInsertKey")
 
-	toolkit.Assert(t, toolkit.Got[any](err), toolkit.Err(cache.ErrKeyNotExist))
+	toolkit.Assert(t, toolkit.Got[any](err), toolkit.Err(domain.ErrKeyNotExist))
 }
 
 func TestUnitCacheSetErrContextTimeout(t *testing.T) {
@@ -405,7 +319,7 @@ func TestUnitCacheSetErrContextTimeout(t *testing.T) {
 	waiter.Add(1)
 
 	go func() {
-		_ = obj.Set(ctx, "insertKey", map[string]any{"hello": "world", "age": 42}, 0)
+		_ = obj.Set(ctx, "insertKey", value(), time.Time{})
 
 		waiter.Done()
 	}()
@@ -414,15 +328,15 @@ func TestUnitCacheSetErrContextTimeout(t *testing.T) {
 	newCtx, cancel := context.WithCancel(ctx)
 	cancel()
 
-	err := obj.Set(newCtx, "newInsertKey", map[string]any{"hello": "world", "age": 42}, 0)
+	err := obj.Set(newCtx, "newInsertKey", value(), time.Time{})
 
-	toolkit.Assert(t, toolkit.Got[any](err), toolkit.Err(cache.ErrContextTimeout))
+	toolkit.Assert(t, toolkit.Got[any](err), toolkit.Err(domain.ErrContextTimeout))
 
 	waiter.Wait()
 
 	_, err = obj.Get(ctx, "newInsertKey")
 
-	toolkit.Assert(t, toolkit.Got[any](err), toolkit.Err(cache.ErrKeyNotExist))
+	toolkit.Assert(t, toolkit.Got[any](err), toolkit.Err(domain.ErrKeyNotExist))
 }
 
 func TestUnitCacheSetErrDriver(t *testing.T) {
@@ -437,13 +351,116 @@ func TestUnitCacheSetErrDriver(t *testing.T) {
 		return errDummy
 	}
 
-	err := obj.Set(ctx, "insertKey", map[string]any{"hello": "world", "age": 42}, 0)
+	err := obj.Set(ctx, "insertKey", value(), time.Time{})
 
-	toolkit.Assert(t, toolkit.Got[any](err), toolkit.Err(errDummy))
+	toolkit.Assert(t, toolkit.Got[any](err), toolkit.Err(errDummyDriver))
 
 	_, err = obj.Get(ctx, "insertKey")
 
-	toolkit.Assert(t, toolkit.Got[any](err), toolkit.Err(cache.ErrKeyNotExist))
+	toolkit.Assert(t, toolkit.Got[any](err), toolkit.Err(domain.ErrKeyNotExist))
+}
+
+func TestUnitCacheDelErrClosed(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+	obj := cache.MustNew(config(), driver())
+
+	_ = obj.Close()
+
+	err := obj.Del(ctx, "insertKey")
+
+	toolkit.Assert(t, toolkit.Got[any](err), toolkit.Err(domain.ErrClosed))
+}
+
+func TestUnitCacheDelErrConnTimeout(t *testing.T) {
+	t.Parallel()
+
+	driver := driver()
+
+	waiter := sync.WaitGroup{}
+	ctx := context.Background()
+	obj := cache.MustNew(config(), driver)
+
+	driver.SetMock = func(_ context.Context, _ string, _ string) error {
+		time.Sleep(10 * connTimeout)
+
+		return nil
+	}
+
+	waiter.Add(1)
+
+	go func() {
+		_ = obj.Set(ctx, "insertKey", value(), time.Time{})
+
+		waiter.Done()
+	}()
+	time.Sleep(connTimeout)
+
+	err := obj.Del(ctx, "insertKey")
+
+	toolkit.Assert(t, toolkit.Got[any](err), toolkit.Err(domain.ErrConnTimeout))
+
+	waiter.Wait()
+
+	err = obj.Del(ctx, "insertKey")
+
+	toolkit.Assert(t, toolkit.Got[any](err), toolkit.Err(nil))
+}
+
+func TestUnitCacheDelErrContextTimeout(t *testing.T) {
+	t.Parallel()
+
+	driver := driver()
+
+	waiter := sync.WaitGroup{}
+	ctx := context.Background()
+	obj := cache.MustNew(config(), driver)
+
+	driver.SetMock = func(_ context.Context, _ string, _ string) error {
+		time.Sleep(10 * connTimeout)
+
+		return nil
+	}
+
+	waiter.Add(1)
+
+	go func() {
+		_ = obj.Set(ctx, "insertKey", value(), time.Time{})
+
+		waiter.Done()
+	}()
+	time.Sleep(connTimeout)
+
+	newCtx, cancel := context.WithCancel(ctx)
+	cancel()
+
+	err := obj.Del(newCtx, "insertKey")
+
+	toolkit.Assert(t, toolkit.Got[any](err), toolkit.Err(domain.ErrContextTimeout))
+
+	waiter.Wait()
+
+	err = obj.Del(ctx, "insertKey")
+
+	toolkit.Assert(t, toolkit.Got[any](err), toolkit.Err(nil))
+}
+
+func TestUnitCacheDelErrDriver(t *testing.T) {
+	t.Parallel()
+
+	driver := driver()
+
+	ctx := context.Background()
+	obj := cache.MustNew(config(), driver)
+
+	driver.DelMock = func(_ context.Context, _ string) error {
+		return errDummy
+	}
+
+	err := obj.Del(ctx, "insertKey")
+
+	toolkit.Assert(t, toolkit.Got[any](err), toolkit.Err(errDummyDriver))
 }
 
 func TestUnitCacheLogicNonExKey(t *testing.T) {
@@ -463,11 +480,11 @@ func TestUnitCacheLogicNonExKey(t *testing.T) {
 		return string(bytes), nil
 	}
 
-	_ = obj.Set(ctx, "key", map[string]any{"hello": "world", "age": 42}, 0)
+	_ = obj.Set(ctx, "key", value(), time.Time{})
 
-	val, err := obj.Get(ctx, "key")
+	got, err := obj.Get(ctx, "key")
 
-	toolkit.Assert(t, toolkit.Got(err, val), toolkit.Want(cache.ValType{"hello": "world", "age": float64(42)}, nil))
+	toolkit.Assert(t, toolkit.Got(err, got), toolkit.Want(value(), nil))
 }
 
 func TestUnitCacheLogicExKey(t *testing.T) {
@@ -478,12 +495,12 @@ func TestUnitCacheLogicExKey(t *testing.T) {
 	ctx := context.Background()
 	obj := cache.MustNew(config(), driver)
 
-	_ = obj.Set(ctx, "key", map[string]any{"hello": "world", "age": 42}, connTimeout)
+	_ = obj.Set(ctx, "key", value(), time.Now().UTC().Add(connTimeout))
 	time.Sleep(2 * connTimeout)
 
 	_, err := obj.Get(ctx, "key")
 
-	toolkit.Assert(t, toolkit.Got[any](err), toolkit.Err(cache.ErrKeyNotExist))
+	toolkit.Assert(t, toolkit.Got[any](err), toolkit.Err(domain.ErrKeyNotExist))
 }
 
 func TestUnitCacheLogicNonExKeyBecomesEx(t *testing.T) {
@@ -503,17 +520,17 @@ func TestUnitCacheLogicNonExKeyBecomesEx(t *testing.T) {
 		return string(bytes), nil
 	}
 
-	_ = obj.Set(ctx, "key", map[string]any{"hello": "world", "age": 42}, 0)
-	_ = obj.Set(ctx, "key", map[string]any{"hello": "world", "age": 42}, 2*connTimeout)
+	_ = obj.Set(ctx, "key", value(), time.Time{})
+	_ = obj.Set(ctx, "key", value(), time.Now().UTC().Add(2*connTimeout))
 
 	val, err := obj.Get(ctx, "key")
 
-	toolkit.Assert(t, toolkit.Got(err, val), toolkit.Want(cache.ValType{"hello": "world", "age": float64(42)}, nil))
+	toolkit.Assert(t, toolkit.Got(err, val), toolkit.Want(value(), nil))
 	time.Sleep(4 * connTimeout)
 
 	_, err = obj.Get(ctx, "key")
 
-	toolkit.Assert(t, toolkit.Got[any](err), toolkit.Err(cache.ErrKeyNotExist))
+	toolkit.Assert(t, toolkit.Got[any](err), toolkit.Err(domain.ErrKeyNotExist))
 }
 
 func TestUnitCacheLogicIncreaseExOnKey(t *testing.T) {
@@ -533,20 +550,20 @@ func TestUnitCacheLogicIncreaseExOnKey(t *testing.T) {
 		return string(bytes), nil
 	}
 
-	_ = obj.Set(ctx, "key", map[string]any{"hello": "world", "age": 42}, 5*connTimeout)
+	_ = obj.Set(ctx, "key", value(), time.Now().UTC().Add(5*connTimeout))
 	time.Sleep(2 * connTimeout)
 
-	_ = obj.Set(ctx, "key", map[string]any{"hello": "world", "age": 42}, 10*connTimeout)
+	_ = obj.Set(ctx, "key", value(), time.Now().UTC().Add(10*connTimeout))
 	time.Sleep(6 * connTimeout)
 
 	val, err := obj.Get(ctx, "key")
 
-	toolkit.Assert(t, toolkit.Got(err, val), toolkit.Want(cache.ValType{"hello": "world", "age": float64(42)}, nil))
+	toolkit.Assert(t, toolkit.Got(err, val), toolkit.Want(value(), nil))
 	time.Sleep(6 * connTimeout)
 
 	_, err = obj.Get(ctx, "key")
 
-	toolkit.Assert(t, toolkit.Got[any](err), toolkit.Err(cache.ErrKeyNotExist))
+	toolkit.Assert(t, toolkit.Got[any](err), toolkit.Err(domain.ErrKeyNotExist))
 }
 
 func TestUnitCacheLogicDecreaseExOnKey(t *testing.T) {
@@ -566,15 +583,15 @@ func TestUnitCacheLogicDecreaseExOnKey(t *testing.T) {
 		return string(bytes), nil
 	}
 
-	_ = obj.Set(ctx, "key", map[string]any{"hello": "world", "age": 42}, 10*connTimeout)
+	_ = obj.Set(ctx, "key", value(), time.Now().UTC().Add(10*connTimeout))
 	time.Sleep(connTimeout)
 
-	_ = obj.Set(ctx, "key", map[string]any{"hello": "world", "age": 42}, 5*connTimeout)
+	_ = obj.Set(ctx, "key", value(), time.Now().UTC().Add(5*connTimeout))
 	time.Sleep(7 * connTimeout)
 
 	_, err := obj.Get(ctx, "key")
 
-	toolkit.Assert(t, toolkit.Got[any](err), toolkit.Err(cache.ErrKeyNotExist))
+	toolkit.Assert(t, toolkit.Got[any](err), toolkit.Err(domain.ErrKeyNotExist))
 }
 
 func TestUnitCacheLogicExKeyBecomesNonEx(t *testing.T) {
@@ -594,16 +611,16 @@ func TestUnitCacheLogicExKeyBecomesNonEx(t *testing.T) {
 		return string(bytes), nil
 	}
 
-	_ = obj.Set(ctx, "key", map[string]any{"hello": "world", "age": 42}, 5*connTimeout)
+	_ = obj.Set(ctx, "key", value(), time.Now().UTC().Add(5*connTimeout))
 	time.Sleep(2 * connTimeout)
 
-	_ = obj.Set(ctx, "key", map[string]any{"hello": "world", "age": 42}, 0)
+	_ = obj.Set(ctx, "key", value(), time.Time{})
 
 	time.Sleep(6 * connTimeout)
 
 	val, err := obj.Get(ctx, "key")
 
-	toolkit.Assert(t, toolkit.Got(err, val), toolkit.Want(cache.ValType{"hello": "world", "age": float64(42)}, nil))
+	toolkit.Assert(t, toolkit.Got(err, val), toolkit.Want(value(), nil))
 }
 
 func TestUnitCacheLogicExKeyWasDeleted(t *testing.T) {
@@ -614,7 +631,7 @@ func TestUnitCacheLogicExKeyWasDeleted(t *testing.T) {
 	ctx := context.Background()
 	obj := cache.MustNew(config(), driver)
 
-	_ = obj.Set(ctx, "key", map[string]any{"hello": "world", "age": 42}, 5*connTimeout)
+	_ = obj.Set(ctx, "key", value(), time.Now().UTC().Add(5*connTimeout))
 	time.Sleep(2 * connTimeout)
 
 	_ = obj.Del(ctx, "key")
@@ -623,7 +640,7 @@ func TestUnitCacheLogicExKeyWasDeleted(t *testing.T) {
 
 	_, err := obj.Get(ctx, "key")
 
-	toolkit.Assert(t, toolkit.Got[any](err), toolkit.Err(cache.ErrKeyNotExist))
+	toolkit.Assert(t, toolkit.Got[any](err), toolkit.Err(domain.ErrKeyNotExist))
 }
 
 func TestUnitCacheLogicExKeyWaitOnDeletion(t *testing.T) {
@@ -653,134 +670,87 @@ func TestUnitCacheLogicExKeyWaitOnDeletion(t *testing.T) {
 		return errDummy
 	}
 
-	_ = obj.Set(ctx, "key", map[string]any{"hello": "world", "age": 42}, 2*connTimeout)
+	_ = obj.Set(ctx, "key", value(), time.Now().UTC().Add(2*connTimeout))
 	time.Sleep(2 * connTimeout)
 
 	_, err := obj.Get(ctx, "key")
 
 	// key was expired but still not deleted
-	toolkit.Assert(t, toolkit.Got[any](err), toolkit.Err(cache.ErrKeyExpired))
+	toolkit.Assert(t, toolkit.Got[any](err), toolkit.Err(domain.ErrKeyExpired))
 
 	time.Sleep(4 * connTimeout)
 
 	_, err = obj.Get(ctx, "key")
 
 	// key was deleted successfully
-	toolkit.Assert(t, toolkit.Got[any](err), toolkit.Err(cache.ErrKeyNotExist))
+	toolkit.Assert(t, toolkit.Got[any](err), toolkit.Err(domain.ErrKeyNotExist))
 }
 
-func TestUnitCacheDelErrEmptyKey(t *testing.T) {
+func TestUnitCacheLogicKeyNotFoundInDriver(t *testing.T) {
 	t.Parallel()
 
-	ctx := context.Background()
-	obj := cache.MustNew(config(), driver())
-
-	err := obj.Del(ctx, "")
-
-	toolkit.Assert(t, toolkit.Got[any](err), toolkit.Err(cache.ErrEmptyKey))
-}
-
-func TestUnitCacheDelErrClosed(t *testing.T) {
-	t.Parallel()
+	driver := driver()
 
 	ctx := context.Background()
-	obj := cache.MustNew(config(), driver())
+	obj := cache.MustNew(config(), driver)
 
-	_ = obj.Close()
+	driver.GetMock = func(_ context.Context, _ string) (string, error) {
+		return "", drivers.ErrNotExist
+	}
 
-	err := obj.Del(ctx, "insertKey")
+	_ = obj.Set(ctx, "key", value(), time.Time{})
 
-	toolkit.Assert(t, toolkit.Got[any](err), toolkit.Err(cache.ErrClosed))
+	_, err := obj.Get(ctx, "key")
+
+	toolkit.Assert(t, toolkit.Got[any](err), toolkit.Err(domain.ErrKeyNotExist))
 }
 
-func TestUnitCacheDelErrConnTimeout(t *testing.T) {
+func TestUnitCacheLogicSmoke(t *testing.T) {
 	t.Parallel()
 
 	driver := driver()
 
 	waiter := sync.WaitGroup{}
 	ctx := context.Background()
-	obj := cache.MustNew(config(), driver)
+	obj := cache.MustNew(cache.Config{MaxConn: 20, ConnTimeout: connTimeout}, driver)
 
 	driver.SetMock = func(_ context.Context, _ string, _ string) error {
-		time.Sleep(10 * connTimeout)
+		time.Sleep(connTimeout)
 
 		return nil
 	}
+	driver.GetMock = func(_ context.Context, _ string) (string, error) {
+		bytes, err := json.Marshal(map[string]any{"hello": "world", "age": 42})
+		if err != nil {
+			panic(err)
+		}
 
-	waiter.Add(1)
+		return string(bytes), nil
+	}
 
-	go func() {
-		_ = obj.Set(ctx, "insertKey", map[string]any{"hello": "world", "age": 42}, 0)
+	waiter.Add(100)
 
-		waiter.Done()
-	}()
-	time.Sleep(connTimeout)
+	success := atomic.Int64{}
+	failure := atomic.Int64{}
 
-	err := obj.Del(ctx, "insertKey")
+	for idx := range 100 {
+		go func(key string) {
+			err := obj.Set(ctx, key, value(), time.Time{})
+			if err != nil {
+				failure.Add(1)
+			} else {
+				success.Add(1)
+			}
 
-	toolkit.Assert(t, toolkit.Got[any](err), toolkit.Err(cache.ErrConnTimeout))
+			waiter.Done()
+		}(strconv.Itoa(idx))
+	}
 
 	waiter.Wait()
 
-	err = obj.Del(ctx, "insertKey")
-
-	toolkit.Assert(t, toolkit.Got[any](err), toolkit.Err(nil))
-}
-
-func TestUnitCacheDelErrContextTimeout(t *testing.T) {
-	t.Parallel()
-
-	driver := driver()
-
-	waiter := sync.WaitGroup{}
-	ctx := context.Background()
-	obj := cache.MustNew(config(), driver)
-
-	driver.SetMock = func(_ context.Context, _ string, _ string) error {
-		time.Sleep(10 * connTimeout)
-
-		return nil
-	}
-
-	waiter.Add(1)
-
-	go func() {
-		_ = obj.Set(ctx, "insertKey", map[string]any{"hello": "world", "age": 42}, 0)
-
-		waiter.Done()
-	}()
-	time.Sleep(connTimeout)
-
-	newCtx, cancel := context.WithCancel(ctx)
-	cancel()
-
-	err := obj.Del(newCtx, "insertKey")
-
-	toolkit.Assert(t, toolkit.Got[any](err), toolkit.Err(cache.ErrContextTimeout))
-
-	waiter.Wait()
-
-	err = obj.Del(ctx, "insertKey")
-
-	toolkit.Assert(t, toolkit.Got[any](err), toolkit.Err(nil))
-}
-
-func TestUnitCacheDelErrDriver(t *testing.T) {
-	t.Parallel()
-
-	driver := driver()
-
-	ctx := context.Background()
-	obj := cache.MustNew(config(), driver)
-
-	driver.DelMock = func(_ context.Context, _ string) error {
-		return errDummy
-	}
-
-	err := obj.Del(ctx, "insertKey")
-
-	toolkit.Assert(t, toolkit.Got[any](err), toolkit.Err(errDummy))
+	assert.Less(t, success.Load(), failure.Load())
+	assert.LessOrEqual(t, success.Load(), int64(40))
+	assert.GreaterOrEqual(t, failure.Load(), int64(60))
 }
 
 func TestUnitCacheClose(t *testing.T) {
@@ -818,52 +788,4 @@ func TestUnitCacheClose(t *testing.T) {
 			require.NoError(t, obj.Close())
 		})
 	}
-}
-
-func TestUnitCacheLogic(t *testing.T) {
-	t.Parallel()
-
-	driver := driver()
-
-	waiter := sync.WaitGroup{}
-	ctx := context.Background()
-	obj := cache.MustNew(cache.Config{MaxConn: 20, ConnTimeout: connTimeout}, driver)
-
-	driver.SetMock = func(_ context.Context, _ string, _ string) error {
-		time.Sleep(connTimeout)
-
-		return nil
-	}
-	driver.GetMock = func(_ context.Context, _ string) (string, error) {
-		bytes, err := json.Marshal(map[string]any{"hello": "world", "age": 42})
-		if err != nil {
-			panic(err)
-		}
-
-		return string(bytes), nil
-	}
-
-	waiter.Add(100)
-
-	success := atomic.Int64{}
-	failure := atomic.Int64{}
-
-	for idx := range 100 {
-		go func(key string) {
-			err := obj.Set(ctx, key, map[string]any{"hello": "world", "age": 42}, 0)
-			if err != nil {
-				failure.Add(1)
-			} else {
-				success.Add(1)
-			}
-
-			waiter.Done()
-		}(strconv.Itoa(idx))
-	}
-
-	waiter.Wait()
-
-	assert.Less(t, success.Load(), failure.Load())
-	assert.LessOrEqual(t, success.Load(), int64(40))
-	assert.GreaterOrEqual(t, failure.Load(), int64(60))
 }

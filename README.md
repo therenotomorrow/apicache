@@ -27,7 +27,7 @@ System Requirements
 
 ```shell
 go version
-# go version go1.22.4 ...
+# go version go1.22 ...
 
 redis-server --version
 # Redis server v=7.2.5 ...
@@ -120,4 +120,15 @@ make test/integration
 
 # combines both (test/unit and test/integration) to create local coverage report in HTML
 make test/coverage
+```
+
+Docker
+------
+
+You could use [Dockerfile](./builds/app/Dockerfile) for build and development.
+
+```shell
+docker build -f builds/app/Dockerfile -t apicache .
+
+docker run -p 8080:8080 --env-file .env apicache
 ```

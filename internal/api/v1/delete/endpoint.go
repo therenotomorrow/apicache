@@ -1,23 +1,13 @@
 package apiv1delete
 
 import (
-	"context"
 	"errors"
 	"net/http"
 
 	"github.com/kxnes/go-interviews/apicache/internal/api"
+	"github.com/kxnes/go-interviews/apicache/internal/domain"
 	"github.com/kxnes/go-interviews/apicache/pkg/blender"
-	"github.com/kxnes/go-interviews/apicache/pkg/cache"
 	"github.com/labstack/echo/v4"
-)
-
-type (
-	CacheDeleter interface {
-		Del(ctx context.Context, key string) error
-	}
-	Params struct {
-		Key string `param:"key" validate:"required"`
-	}
 )
 
 // Delete ----
@@ -29,8 +19,9 @@ type (
 // @Failure    429 {object} api.TooManyRequests
 // @Failure    500 {object} api.InternalServer
 // @Router     /api/v1/{key}/ [delete].
-func Delete(cacher CacheDeleter) echo.HandlerFunc {
-	params := blender.New[Params]()
+func Delete(cache domain.CacheDeleter) echo.HandlerFunc {
+	params := blender.New[api.Params]()
+	useCase := domain.NewDelUseCase(cache)
 
 	return func(etx echo.Context) error {
 		params, err := params.Path(etx)
@@ -38,15 +29,15 @@ func Delete(cacher CacheDeleter) echo.HandlerFunc {
 			return api.UnprocessableEntityError(err)
 		}
 
-		err = cacher.Del(etx.Request().Context(), params.Key)
+		err = useCase.Execute(etx.Request().Context(), params.Key)
 		if err == nil {
 			return etx.NoContent(http.StatusNoContent)
 		}
 
 		switch {
-		case errors.Is(err, cache.ErrConnTimeout):
+		case errors.Is(err, domain.ErrConnTimeout):
 			return api.TooManyRequestsError(err)
-		case errors.Is(err, cache.ErrContextTimeout):
+		case errors.Is(err, domain.ErrContextTimeout):
 			return api.TooManyRequestsError(err)
 		}
 

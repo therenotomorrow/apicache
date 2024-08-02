@@ -15,10 +15,10 @@ import (
 	"github.com/labstack/gommon/log"
 )
 
-func echoHandler(etx echo.Context) error {
+func echoHandler(_ echo.Context) error {
 	time.Sleep(time.Minute)
 
-	return etx.String(http.StatusOK, "ok")
+	return nil
 }
 
 func TestUnitNew(t *testing.T) {
@@ -32,14 +32,8 @@ func TestUnitNew(t *testing.T) {
 		name string
 		args args
 	}{
-		{
-			name: "with debug",
-			args: args{debug: true},
-		},
-		{
-			name: "without debug",
-			args: args{debug: false},
-		},
+		{name: "with debug", args: args{debug: true}},
+		{name: "without debug", args: args{debug: false}},
 	}
 
 	for _, test := range tests {

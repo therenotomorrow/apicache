@@ -6,7 +6,8 @@ import (
 	"testing"
 
 	"github.com/bradfitz/gomemcache/memcache"
-	"github.com/kxnes/go-interviews/apicache/pkg/cache"
+	"github.com/kxnes/go-interviews/apicache/internal/services/cache"
+	"github.com/kxnes/go-interviews/apicache/pkg/drivers"
 	"github.com/kxnes/go-interviews/apicache/pkg/drivers/memcached"
 	"github.com/kxnes/go-interviews/apicache/test/toolkit"
 	"github.com/stretchr/testify/assert"
@@ -18,7 +19,11 @@ const (
 	invalidAddr = ":0"
 )
 
-var errDriver = errors.New("driver error: dial tcp :0: connect: connection refused")
+var (
+	errDriverGet = errors.New("Memcached.Get() error: dial tcp :0: connect: connection refused")
+	errDriverSet = errors.New("Memcached.Set() error: dial tcp :0: connect: connection refused")
+	errDriverDel = errors.New("Memcached.Del() error: dial tcp :0: connect: connection refused")
+)
 
 func config() memcached.Config {
 	return memcached.Config{Addr: addr}
@@ -63,12 +68,12 @@ func TestIntegrationMemcachedGet(t *testing.T) {
 		{
 			name: "key not exist",
 			args: args{cfg: config(), key: "invalidKey"},
-			want: toolkit.Want("", cache.ErrKeyNotExist),
+			want: toolkit.Want("", drivers.ErrNotExist),
 		},
 		{
 			name: "driver error",
 			args: args{cfg: memcached.Config{Addr: invalidAddr}, key: "key"},
-			want: toolkit.Want("", errDriver),
+			want: toolkit.Want("", errDriverGet),
 		},
 	}
 
@@ -113,7 +118,7 @@ func TestIntegrationMemcachedSet(t *testing.T) {
 		{
 			name: "driver error",
 			args: args{cfg: memcached.Config{Addr: invalidAddr}, key: "key", val: ""},
-			want: toolkit.Err(errDriver),
+			want: toolkit.Err(errDriverSet),
 		},
 	}
 
@@ -168,7 +173,7 @@ func TestIntegrationMemcachedDel(t *testing.T) {
 		{
 			name: "driver error",
 			args: args{cfg: memcached.Config{Addr: invalidAddr}, key: "key"},
-			want: toolkit.Err(errDriver),
+			want: toolkit.Err(errDriverDel),
 		},
 	}
 

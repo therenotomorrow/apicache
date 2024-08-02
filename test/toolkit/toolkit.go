@@ -64,7 +64,11 @@ func Assert[T any](t *testing.T, got G[T], want W[T]) {
 }
 
 func RootDir() string {
-	_, filename, _, _ := runtime.Caller(0) //nolint:dogsled
+	_, filename, _, ok := runtime.Caller(0)
+
+	if !ok {
+		return ""
+	}
 
 	return path.Join(path.Dir(filename), "..", "..")
 }
@@ -72,31 +76,3 @@ func RootDir() string {
 func EnvFile() string {
 	return path.Join(RootDir(), "configs", ".env.test")
 }
-
-//
-// var (
-//	Settings = settings()
-//)
-//
-// func settings() func(t *testing.T) config.Settings {
-//	var settings config.Settings
-//
-//	once := sync.OnceFunc(func() {
-//		var err error
-//
-//		settings, err = config.New(EnvFile())
-//		if err != nil {
-//			panic(err)
-//		}
-//	})
-//
-//	return func(t *testing.T) config.Settings { //nolint:thelper
-//		if t != nil {
-//			t.Helper()
-//		}
-//
-//		once()
-//
-//		return settings
-//	}
-//}

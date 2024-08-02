@@ -4,7 +4,7 @@ import (
 	"context"
 	"sync"
 
-	"github.com/kxnes/go-interviews/apicache/pkg/cache"
+	"github.com/kxnes/go-interviews/apicache/pkg/drivers"
 )
 
 type Machine struct {
@@ -22,7 +22,7 @@ func (d *Machine) Get(_ context.Context, key string) (string, error) {
 	val, ok := d.data[key]
 
 	if !ok {
-		return "", cache.ErrKeyNotExist
+		return "", drivers.ErrNotExist
 	}
 
 	return val, nil

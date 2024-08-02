@@ -2,13 +2,14 @@ package api_test
 
 import (
 	"errors"
-	"github.com/kxnes/go-interviews/apicache/internal/api"
-	"github.com/kxnes/go-interviews/apicache/test/toolkit"
-	"github.com/labstack/echo/v4"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
+
+	"github.com/kxnes/go-interviews/apicache/internal/api"
+	"github.com/kxnes/go-interviews/apicache/test/toolkit"
+	"github.com/labstack/echo/v4"
 )
 
 const (
@@ -18,6 +19,18 @@ const (
 )
 
 var errDummy = errors.New("dummy error")
+
+type (
+	args struct {
+		err   error
+		debug bool
+	}
+	testCase struct {
+		name string
+		args args
+		want toolkit.W[string]
+	}
+)
 
 func handleError(herr *echo.HTTPError, debug bool) (int, string) {
 	req := httptest.NewRequest(http.MethodGet, "/", nil)
@@ -32,25 +45,18 @@ func handleError(herr *echo.HTTPError, debug bool) (int, string) {
 	return rec.Code, strings.TrimSpace(rec.Body.String())
 }
 
-func TestBadRequestError(t *testing.T) {
-	t.Parallel()
-
-	type args struct {
-		err   error
-		debug bool
-	}
-
-	tests := []struct {
-		name string
-		args args
-		want toolkit.W[string]
-	}{
+func testCases() []testCase {
+	return []testCase{
 		{name: "with error", args: args{err: errDummy, debug: false}, want: toolkit.Want(regularMsg, nil)},
 		{name: "with debug", args: args{err: errDummy, debug: true}, want: toolkit.Want(debugMsg, nil)},
 		{name: "without error", args: args{err: nil, debug: false}, want: toolkit.Want(emptyMsg, nil)},
 	}
+}
 
-	for _, test := range tests {
+func TestUnitBadRequestError(t *testing.T) {
+	t.Parallel()
+
+	for _, test := range testCases() {
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
@@ -62,25 +68,10 @@ func TestBadRequestError(t *testing.T) {
 	}
 }
 
-func TestNotFoundError(t *testing.T) {
+func TestUnitNotFoundError(t *testing.T) {
 	t.Parallel()
 
-	type args struct {
-		err   error
-		debug bool
-	}
-
-	tests := []struct {
-		name string
-		args args
-		want toolkit.W[string]
-	}{
-		{name: "with error", args: args{err: errDummy, debug: false}, want: toolkit.Want(regularMsg, nil)},
-		{name: "with debug", args: args{err: errDummy, debug: true}, want: toolkit.Want(debugMsg, nil)},
-		{name: "without error", args: args{err: nil, debug: false}, want: toolkit.Want(emptyMsg, nil)},
-	}
-
-	for _, test := range tests {
+	for _, test := range testCases() {
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
@@ -92,25 +83,10 @@ func TestNotFoundError(t *testing.T) {
 	}
 }
 
-func TestUnprocessableEntityError(t *testing.T) {
+func TestUnitUnprocessableEntityError(t *testing.T) {
 	t.Parallel()
 
-	type args struct {
-		err   error
-		debug bool
-	}
-
-	tests := []struct {
-		name string
-		args args
-		want toolkit.W[string]
-	}{
-		{name: "with error", args: args{err: errDummy, debug: false}, want: toolkit.Want(regularMsg, nil)},
-		{name: "with debug", args: args{err: errDummy, debug: true}, want: toolkit.Want(debugMsg, nil)},
-		{name: "without error", args: args{err: nil, debug: false}, want: toolkit.Want(emptyMsg, nil)},
-	}
-
-	for _, test := range tests {
+	for _, test := range testCases() {
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
@@ -122,25 +98,10 @@ func TestUnprocessableEntityError(t *testing.T) {
 	}
 }
 
-func TestTooManyRequestsError(t *testing.T) {
+func TestUnitTooManyRequestsError(t *testing.T) {
 	t.Parallel()
 
-	type args struct {
-		err   error
-		debug bool
-	}
-
-	tests := []struct {
-		name string
-		args args
-		want toolkit.W[string]
-	}{
-		{name: "with error", args: args{err: errDummy, debug: false}, want: toolkit.Want(regularMsg, nil)},
-		{name: "with debug", args: args{err: errDummy, debug: true}, want: toolkit.Want(debugMsg, nil)},
-		{name: "without error", args: args{err: nil, debug: false}, want: toolkit.Want(emptyMsg, nil)},
-	}
-
-	for _, test := range tests {
+	for _, test := range testCases() {
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
@@ -152,7 +113,7 @@ func TestTooManyRequestsError(t *testing.T) {
 	}
 }
 
-func TestInternalServerError(t *testing.T) {
+func TestUnitInternalServerError(t *testing.T) {
 	t.Parallel()
 
 	type args struct {

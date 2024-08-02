@@ -1,28 +1,19 @@
 package apiv1get
 
 import (
-	"context"
 	"errors"
 	"net/http"
 
 	"github.com/kxnes/go-interviews/apicache/internal/api"
+	"github.com/kxnes/go-interviews/apicache/internal/domain"
 	"github.com/kxnes/go-interviews/apicache/pkg/blender"
-	"github.com/kxnes/go-interviews/apicache/pkg/cache"
 	"github.com/labstack/echo/v4"
 )
 
-type (
-	CacheGetter interface {
-		Get(ctx context.Context, key string) (cache.ValType, error)
-	}
-	Params struct {
-		Key string `param:"key" validate:"required"`
-	}
-	Response struct {
-		Key string        `json:"key"`
-		Val cache.ValType `json:"val"`
-	}
-)
+type Response struct {
+	Key string         `json:"key"`
+	Val domain.ValType `json:"val"`
+}
 
 // Get ----
 // @Summary    "Retrieve key/value pair"
@@ -36,8 +27,9 @@ type (
 // @Failure    429 {object} api.TooManyRequests
 // @Failure    500 {object} api.InternalServer
 // @Router     /api/v1/{key}/ [get].
-func Get(cacher CacheGetter) echo.HandlerFunc {
-	params := blender.New[Params]()
+func Get(cache domain.CacheGetter) echo.HandlerFunc {
+	params := blender.New[api.Params]()
+	useCase := domain.NewGetUseCase(cache)
 
 	return func(etx echo.Context) error {
 		params, err := params.Path(etx)
@@ -45,19 +37,19 @@ func Get(cacher CacheGetter) echo.HandlerFunc {
 			return api.UnprocessableEntityError(err)
 		}
 
-		val, err := cacher.Get(etx.Request().Context(), params.Key)
+		val, err := useCase.Execute(etx.Request().Context(), params.Key)
 		if err == nil {
 			return etx.JSON(http.StatusOK, &Response{Key: params.Key, Val: val})
 		}
 
 		switch {
-		case errors.Is(err, cache.ErrKeyExpired):
+		case errors.Is(err, domain.ErrKeyExpired):
 			return api.BadRequestError(err)
-		case errors.Is(err, cache.ErrKeyNotExist):
+		case errors.Is(err, domain.ErrKeyNotExist):
 			return api.NotFoundError(err)
-		case errors.Is(err, cache.ErrConnTimeout):
+		case errors.Is(err, domain.ErrConnTimeout):
 			return api.TooManyRequestsError(err)
-		case errors.Is(err, cache.ErrContextTimeout):
+		case errors.Is(err, domain.ErrContextTimeout):
 			return api.TooManyRequestsError(err)
 		}
 

@@ -3,9 +3,15 @@ package apiv1get_test
 import (
 	"context"
 	"errors"
-	"github.com/kxnes/go-interviews/apicache/pkg/cache"
-	"reflect"
+	"net/http"
+	"net/http/httptest"
+	"strings"
 	"testing"
+
+	apiv1get "github.com/kxnes/go-interviews/apicache/internal/api/v1/get"
+	"github.com/kxnes/go-interviews/apicache/internal/domain"
+	"github.com/kxnes/go-interviews/apicache/test/toolkit"
+	"github.com/labstack/echo/v4"
 )
 
 const (
@@ -16,60 +22,136 @@ const (
 	Smoke5 = "smoke5"
 	Smoke6 = "smoke6"
 	Smoke7 = "smoke7"
-	Smoke8 = "smoke8"
-	Smoke9 = "smoke9"
 )
 
 var errDummy = errors.New("dummy error")
 
-type cacheGetter struct{}
-
-func (c cacheGetter) Get(_ context.Context, key string) (cache.ValType, error) {
-	switch key {
-	case Smoke2:
-		return nil, cache.ErrKeyExpired
-	case Smoke3:
-		return nil, cache.ErrKeyNotExist
-	case Smoke4:
-		return nil, cache.ErrConnTimeout
-	case Smoke5:
-		return nil, cache.ErrContextTimeout
-	case Smoke6:
-		return nil, errDummy
-	default:
-		return map[string]any{"hello": "world", "age": 42}, nil
-	}
-}
-
-func TestGet(t *testing.T) {
-	t.Parallel()
-
-	type params struct {
+type (
+	cacheGetter struct{}
+	params      struct {
 		names  []string
 		values []string
 	}
-
-	type args struct {
+	args struct {
 		params *params
 	}
-
-	type want struct {
+	want struct {
 		code int
 		body string
 	}
-
-	tests := []struct {
+	testCase struct {
 		name string
 		args args
 		want want
-	}{
-		// TODO: Add test cases.
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := Get(tt.args.cacher); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("Get() = %v, want %v", got, tt.want)
-			}
+)
+
+func (c cacheGetter) Get(_ context.Context, key string) ([]byte, error) {
+	switch key {
+	case Smoke2:
+		return nil, domain.ErrKeyExpired
+	case Smoke3:
+		return nil, domain.ErrKeyNotExist
+	case Smoke4:
+		return nil, domain.ErrConnTimeout
+	case Smoke5:
+		return nil, domain.ErrContextTimeout
+	case Smoke6:
+		return nil, errDummy
+	}
+
+	return []byte(`{"hello":"world","age":42}`), nil
+}
+
+func successTC() testCase {
+	return testCase{
+		name: Smoke1,
+		args: args{params: &params{names: []string{"key"}, values: []string{Smoke1}}},
+		want: want{code: http.StatusOK, body: `{"key":"smoke1","val":{"age":42,"hello":"world"}}`},
+	}
+}
+
+func expiredKeyTC() testCase {
+	return testCase{
+		name: Smoke2,
+		args: args{params: &params{names: []string{"key"}, values: []string{Smoke2}}},
+		want: want{code: http.StatusBadRequest, body: `{"message":"key is expired"}`},
+	}
+}
+
+func keyNotExistTC() testCase {
+	return testCase{
+		name: Smoke3,
+		args: args{params: &params{names: []string{"key"}, values: []string{Smoke3}}},
+		want: want{code: http.StatusNotFound, body: `{"message":"key not exist"}`},
+	}
+}
+
+func connectionTimeoutTC() testCase {
+	return testCase{
+		name: Smoke4,
+		args: args{params: &params{names: []string{"key"}, values: []string{Smoke4}}},
+		want: want{code: http.StatusTooManyRequests, body: `{"message":"connection timeout"}`},
+	}
+}
+
+func contextTimeoutTC() testCase {
+	return testCase{
+		name: Smoke5,
+		args: args{params: &params{names: []string{"key"}, values: []string{Smoke5}}},
+		want: want{code: http.StatusTooManyRequests, body: `{"message":"context timeout"}`},
+	}
+}
+
+func failureTC() testCase {
+	return testCase{
+		name: Smoke6,
+		args: args{params: &params{names: []string{"key"}, values: []string{Smoke6}}},
+		want: want{code: http.StatusInternalServerError, body: `{"message":"InternalServerError"}`},
+	}
+}
+
+func invalidParamsTC() testCase {
+	return testCase{
+		name: Smoke7,
+		args: args{params: &params{names: []string{"key"}, values: nil}},
+		want: want{
+			code: http.StatusUnprocessableEntity,
+			body: "{\"message\":\"validate error: Key: 'Params.Key' Error:" +
+				"Field validation for 'Key' failed on the 'required' tag\"}",
+		},
+	}
+}
+
+func TestUnitGet(t *testing.T) {
+	t.Parallel()
+
+	tests := []testCase{
+		successTC(),
+		expiredKeyTC(),
+		keyNotExistTC(),
+		connectionTimeoutTC(),
+		contextTimeoutTC(),
+		failureTC(),
+		invalidParamsTC(),
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+
+			req := httptest.NewRequest(http.MethodGet, "/", nil)
+			rec := httptest.NewRecorder()
+			mux := echo.New()
+
+			etx := mux.NewContext(req, rec)
+			etx.SetParamNames(test.args.params.names...)
+			etx.SetParamValues(test.args.params.values...)
+
+			mux.HTTPErrorHandler(apiv1get.Get(cacheGetter{})(etx), etx)
+
+			toolkit.Assert(t, toolkit.Got(nil, rec.Code), toolkit.Want(test.want.code, nil))
+			toolkit.Assert(t, toolkit.Got(nil, strings.TrimSpace(rec.Body.String())), toolkit.Want(test.want.body, nil))
 		})
 	}
 }

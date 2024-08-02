@@ -11,7 +11,7 @@ import (
 	apiv1get "github.com/kxnes/go-interviews/apicache/internal/api/v1/get"
 	apiv1post "github.com/kxnes/go-interviews/apicache/internal/api/v1/post"
 	"github.com/kxnes/go-interviews/apicache/internal/config"
-	"github.com/kxnes/go-interviews/apicache/pkg/cache"
+	"github.com/kxnes/go-interviews/apicache/internal/services/cache"
 	"github.com/kxnes/go-interviews/apicache/tools/swagger"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"

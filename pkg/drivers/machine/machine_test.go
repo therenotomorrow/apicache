@@ -4,14 +4,13 @@ import (
 	"context"
 	"testing"
 
-	"github.com/kxnes/go-interviews/apicache/pkg/cache"
+	"github.com/kxnes/go-interviews/apicache/internal/services/cache"
+	"github.com/kxnes/go-interviews/apicache/pkg/drivers"
 	"github.com/kxnes/go-interviews/apicache/pkg/drivers/machine"
 	"github.com/kxnes/go-interviews/apicache/test/toolkit"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
-
-var instance = machine.New() //nolint:gochecknoglobals
 
 func TestUnitNew(t *testing.T) {
 	t.Parallel()
@@ -19,14 +18,15 @@ func TestUnitNew(t *testing.T) {
 	var _ cache.Driver = machine.New()
 }
 
-func TestMain(m *testing.M) {
+func newMachine() *machine.Machine {
 	ctx := context.Background()
+	instance := machine.New()
 
 	_ = instance.Set(ctx, "insertKey", "insertVal")
 	_ = instance.Set(ctx, "updateKey", "updateVal")
 	_ = instance.Set(ctx, "deleteKey", "deleteVal")
 
-	m.Run()
+	return instance
 }
 
 func TestUnitMachineGet(t *testing.T) {
@@ -42,7 +42,7 @@ func TestUnitMachineGet(t *testing.T) {
 		want toolkit.W[string]
 	}{
 		{name: "success", args: args{key: "insertKey"}, want: toolkit.Want("insertVal", nil)},
-		{name: "key not exist", args: args{key: "invalidKey"}, want: toolkit.Want("", cache.ErrKeyNotExist)},
+		{name: "key not exist", args: args{key: "invalidKey"}, want: toolkit.Want("", drivers.ErrNotExist)},
 	}
 
 	for _, test := range tests {
@@ -50,6 +50,7 @@ func TestUnitMachineGet(t *testing.T) {
 			t.Parallel()
 
 			ctx := context.Background()
+			instance := newMachine()
 
 			got, err := instance.Get(ctx, test.args.key)
 
@@ -80,6 +81,7 @@ func TestUnitMachineSet(t *testing.T) {
 			t.Parallel()
 
 			ctx := context.Background()
+			instance := newMachine()
 
 			err := instance.Set(ctx, test.args.key, test.args.val)
 
@@ -114,6 +116,7 @@ func TestUnitMachineDel(t *testing.T) {
 			t.Parallel()
 
 			ctx := context.Background()
+			instance := newMachine()
 
 			err := instance.Del(ctx, test.args.key)
 

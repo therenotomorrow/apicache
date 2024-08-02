@@ -1,5 +1,3 @@
-//go:build !test
-
 package main
 
 import (
@@ -7,14 +5,14 @@ import (
 
 	"github.com/kxnes/go-interviews/apicache/internal/config"
 	"github.com/kxnes/go-interviews/apicache/internal/server"
-	"github.com/kxnes/go-interviews/apicache/pkg/cache"
+	"github.com/kxnes/go-interviews/apicache/internal/services/cache"
 	"github.com/kxnes/go-interviews/apicache/pkg/drivers/machine"
 	"github.com/kxnes/go-interviews/apicache/pkg/drivers/memcached"
 	"github.com/kxnes/go-interviews/apicache/pkg/drivers/redis"
 )
 
 // @Title            apicache
-// @Version          0.0.1
+// @Version          0.0.2
 // @Contact.name     Mute Team
 // @Contact.url      https://github.com/therenotomorrow/apicache
 // @Contact.email    kkxnes@gmail.com
@@ -23,25 +21,12 @@ import (
 // @License.url      https://github.com/therenotomorrow/apicache/blob/master/LICENSE
 func main() {
 	var (
-		settings = config.MustNew()
-		cacher   = cache.MustNew(
-			cache.Config{
-				MaxConn:     settings.Driver.MaxConn,
-				ConnTimeout: settings.Driver.ConnTimeout,
-			},
-			driver(settings),
-		)
+		settings *config.Settings
+		driver   cache.Driver
+		service  *cache.Cache
 	)
 
-	defer func() { _ = cacher.Close() }()
-
-	app := server.New(settings, cacher)
-
-	app.Serve(context.Background())
-}
-
-func driver(settings *config.Settings) cache.Driver { //nolint:ireturn
-	var driver cache.Driver
+	settings = config.MustNew()
 
 	switch drive := settings.Driver; drive.Name {
 	case config.DriverMachine:
@@ -52,5 +37,14 @@ func driver(settings *config.Settings) cache.Driver { //nolint:ireturn
 		driver = redis.NewWithConfig(redis.Config{Addr: drive.Address})
 	}
 
-	return driver
+	service = cache.MustNew(cache.Config{
+		MaxConn:     settings.Driver.MaxConn,
+		ConnTimeout: settings.Driver.ConnTimeout,
+	}, driver)
+
+	defer func() { _ = service.Close() }()
+
+	app := server.New(settings, service)
+
+	app.Serve(context.Background())
 }

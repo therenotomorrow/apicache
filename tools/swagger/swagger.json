@@ -11,7 +11,7 @@
             "name": "MIT",
             "url": "https://github.com/therenotomorrow/apicache/blob/master/LICENSE"
         },
-        "version": "0.0.1"
+        "version": "0.0.2"
     },
     "paths": {
         "/api/v1/{key}/": {
@@ -225,7 +225,7 @@
                     "type": "string"
                 },
                 "val": {
-                    "$ref": "#/definitions/cache.ValType"
+                    "$ref": "#/definitions/domain.ValType"
                 }
             }
         },
@@ -240,7 +240,7 @@
                     "minimum": 0
                 },
                 "val": {
-                    "$ref": "#/definitions/cache.ValType"
+                    "$ref": "#/definitions/domain.ValType"
                 }
             }
         },
@@ -251,11 +251,11 @@
                     "type": "string"
                 },
                 "val": {
-                    "$ref": "#/definitions/cache.ValType"
+                    "$ref": "#/definitions/domain.ValType"
                 }
             }
         },
-        "cache.ValType": {
+        "domain.ValType": {
             "type": "object",
             "additionalProperties": {}
         }

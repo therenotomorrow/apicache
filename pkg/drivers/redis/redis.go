@@ -3,9 +3,10 @@ package redis
 import (
 	"context"
 	"errors"
+	"fmt"
 	"sync"
 
-	"github.com/kxnes/go-interviews/apicache/pkg/cache"
+	"github.com/kxnes/go-interviews/apicache/pkg/drivers"
 	"github.com/redis/go-redis/v9"
 )
 
@@ -31,11 +32,11 @@ func (d *Redis) Get(ctx context.Context, key string) (string, error) {
 	val, err := d.client.Get(ctx, key).Result()
 
 	if errors.Is(err, redis.Nil) {
-		return "", cache.ErrKeyNotExist
+		return "", drivers.ErrNotExist
 	}
 
 	if err != nil {
-		return "", cache.DriverError(err)
+		return "", fmt.Errorf("Redis.Get() error: %w", err)
 	}
 
 	return val, nil
@@ -43,14 +44,20 @@ func (d *Redis) Get(ctx context.Context, key string) (string, error) {
 
 func (d *Redis) Set(ctx context.Context, key string, val string) error {
 	_, err := d.client.Set(ctx, key, val, 0).Result()
+	if err != nil {
+		return fmt.Errorf("Redis.Set() error: %w", err)
+	}
 
-	return cache.DriverError(err)
+	return nil
 }
 
 func (d *Redis) Del(ctx context.Context, key string) error {
 	_, err := d.client.Del(ctx, key).Result()
+	if err != nil {
+		return fmt.Errorf("Redis.Del() error: %w", err)
+	}
 
-	return cache.DriverError(err)
+	return nil
 }
 
 func (d *Redis) Close() error {
@@ -60,7 +67,11 @@ func (d *Redis) Close() error {
 		err = d.client.Close()
 	})
 
-	return cache.DriverError(err)
+	if err != nil {
+		return fmt.Errorf("Redis.Close() error: %w", err)
+	}
+
+	return nil
 }
 
 func (d *Redis) UnsafeClient() *redis.Client {
